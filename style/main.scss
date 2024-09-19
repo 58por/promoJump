@@ -1,0 +1,46 @@
+@import "reset";
+@import "method";
+body {
+    background: #000;
+}
+
+.msg{
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    .txt{
+        font-size: 16px;
+        color: #fff;
+        text-align: center;
+        -webkit-box-reflect: below -6px linear-gradient(transparent,rgba(0, 0, 0, 0.5));
+        span{
+            position: relative;
+            display: inline-block;
+            animation: jump 1.8s ease-in-out infinite;
+            animation-delay: calc(.1s*var(--i));
+        }
+    }
+
+    .failure{
+        text-align: center;
+        font-size: 14px;
+        color: #bababa;
+        span{
+            padding-bottom: 5px;
+            font-size: 28px;
+            font-weight: bold;
+            color: #e98484;
+            display: inline-block;
+        }
+    }
+}
+
+
+@keyframes jump {
+    0%,40%,100%{transform: translateY(0);}
+    20%{transform: translateY(-15px);}
+}
+

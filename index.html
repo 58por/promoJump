@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="cn">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0, shrink-to-fit=no, viewport-fit=cover">
+    <link rel="stylesheet" href="style/main.css">
+    <script src="js/vue.js"></script>
+    <script src="js/axios.js"></script>
+</head>
+
+<body>
+    <div class="msg" id="app">
+        <!-- 匹配中 -->
+        <div class="txt" v-if="onMatch">
+            <span style="--i:1">正</span>
+            <span style="--i:2">在</span>
+            <span style="--i:3">匹</span>
+            <span style="--i:4">配</span>
+            <span style="--i:5">线</span>
+            <span style="--i:6">路</span>
+            <span style="--i:7">中</span>
+            <span style="--i:8">，</span>
+            <span style="--i:9">请</span>
+            <span style="--i:10">稍</span>
+            <span style="--i:11">候</span>
+            <span style="--i:12">…</span>
+        </div>
+        <!-- 匹配失败 -->
+        <div class="failure" v-else>
+            <span>Sorry</span>
+            <p>匹配线路失败，请稍候再试...</p>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted } = Vue;
+        createApp({
+            setup() {
+                const urls = ref([]);
+                const onMatch = ref(true);
+
+                // 取得資料
+                async function getVal() {
+                    try {
+                        const urlWithTimestamp = `json/urls.json?_=${new Date().getTime()}`;
+                        const res = await axios.get(urlWithTimestamp);
+                        if (res.status == 200) {
+                            urls.value = res.data;
+                        } else {
+                            onMatch.value = false;
+                        }
+                    } catch (error) {
+                        onMatch.value = false;
+                    }
+                }
+
+                async function checkUrls() {
+                    const promises = urls.value.map((url, index) => {
+                        return new Promise((resolve, reject) => {
+                            // 隨機字串防止緩存
+                            const randStr = Math.random().toString(36).substr(2, 7);
+                            const img = new Image();
+
+                            // 成功解析当前 URL
+                            img.onload = () => resolve(url);
+
+                            // 失敗
+                            img.onerror = () => reject();
+
+                            // 设置超时
+                            setTimeout(() => reject(), 5000);
+
+                            // 圖片位置
+                            img.src = `${url}/img/logo/logo.png?${randStr}`;
+                        });
+                    });
+
+                    try {
+                        // 尝试所有 URL，并找到第一个成功的
+                        const results = await Promise.allSettled(promises);
+                        const firstSuccessful = results.find(result => result.status === 'fulfilled');
+                        
+                        if (firstSuccessful) {
+                            handleRedirect(firstSuccessful.value); // 跳转第一个成功的 URL
+                        } else {
+                            onMatch.value = false;
+                        }
+                    } catch (error) {
+                        onMatch.value = false;
+                    }
+                }
+
+                function handleRedirect(url) {
+                    const currentUrl = new URL(window.location.href);
+                    const params = new URLSearchParams(currentUrl.search);
+                    const shareCode = params.get('shareCode');
+
+                    if (shareCode) {
+                        window.location.href = `${url}?shareCode=${shareCode}`;
+                    } else {
+                        window.location.href = url;
+                    }
+                }
+
+                onMounted(async () => {
+                    await getVal();
+                    setTimeout(() => {
+                        checkUrls();
+                    }, 2000);
+                });
+
+                return {
+                    urls,
+                    onMatch,
+                    getVal,
+                    checkUrls
+                };
+            },
+        }).mount("#app");
+
+    </script>
+</body>
+
+</html>
